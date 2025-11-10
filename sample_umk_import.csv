@@ -1,0 +1,33 @@
+kabupaten_kota,provinsi,umk,tahun,region,is_active,source,notes
+Jakarta Selatan,DKI Jakarta,5067823,2024,jabodetabek,true,Kemenaker RI,Ibukota Indonesia
+Jakarta Utara,DKI Jakarta,5067823,2024,jabodetabek,true,Kemenaker RI,
+Bogor,Jawa Barat,4459693,2024,jabodetabek,true,Kemenaker RI,
+Depok,Jawa Barat,4415979,2024,jabodetabek,true,Kemenaker RI,
+Tangerang,Banten,4350672,2024,jabodetabek,true,Kemenaker RI,
+Tangerang Selatan,Banten,4350672,2024,jabodetabek,true,Kemenaker RI,
+Bekasi,Jawa Barat,4781208,2024,jabodetabek,true,Kemenaker RI,
+Bandung,Jawa Barat,3742275,2024,jawa_barat,true,Kemenaker RI,Kota Metropolitan
+Cimahi,Jawa Barat,3742275,2024,jawa_barat,true,Kemenaker RI,
+Sukabumi,Jawa Barat,2679393,2024,jawa_barat,true,Kemenaker RI,
+Cirebon,Jawa Barat,2197442,2024,jawa_barat,true,Kemenaker RI,
+Semarang,Jawa Tengah,2954326,2024,jawa_tengah,true,Kemenaker RI,
+Surakarta,Jawa Tengah,2104701,2024,jawa_tengah,true,Kemenaker RI,
+Solo,Jawa Tengah,2104701,2024,jawa_tengah,true,Kemenaker RI,
+Yogyakarta,DI Yogyakarta,2165830,2024,yogyakarta,true,Kemenaker RI,
+Surabaya,Jawa Timur,2430438,2024,jawa_timur,true,Kemenaker RI,Kota Pahlawan
+Malang,Jawa Timur,2087093,2024,jawa_timur,true,Kemenaker RI,
+Kediri,Jawa Timur,1997077,2024,jawa_timur,true,Kemenaker RI,
+Blitar,Jawa Timur,2143536,2024,jawa_timur,true,Kemenaker RI,
+Denpasar,Bali,2636407,2024,bali,true,Kemenaker RI,Pulau Dewata
+Badung,Bali,2636407,2024,bali,true,Kemenaker RI,
+Medan,Sumatera Utara,3019784,2024,sumatera,true,Kemenaker RI,
+Palembang,Sumatera Selatan,3284052,2024,sumatera,true,Kemenaker RI,
+Padang,Sumatera Barat,2600628,2024,sumatera,true,Kemenaker RI,
+Pekanbaru,Riau,3194262,2024,sumatera,true,Kemenaker RI,
+Banjarmasin,Kalimantan Selatan,3034324,2024,kalimantan,true,Kemenaker RI,
+Samarinda,Kalimantan Timur,3094230,2024,kalimantan,true,Kemenaker RI,
+Balikpapan,Kalimantan Timur,3294214,2024,kalimantan,true,Kemenaker RI,
+Pontianak,Kalimantan Barat,2836287,2024,kalimantan,true,Kemenaker RI,
+Makassar,Sulawesi Selatan,3372930,2024,sulawesi,true,Kemenaker RI,
+Manado,Sulawesi Utara,3503965,2024,sulawesi,true,Kemenaker RI,
+Jayapura,Papua,3611729,2024,papua,true,Kemenaker RI

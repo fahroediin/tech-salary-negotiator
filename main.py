@@ -11,6 +11,7 @@ from models import OfferAnalysisCreate
 from services.offer_parser import OfferLetterParser
 from services.salary_analyzer import SalaryAnalyzer
 from services.script_generator import NegotiationScriptGenerator
+from routes import umk_admin
 
 load_dotenv()
 
@@ -43,6 +44,9 @@ app.add_middleware(
 
 # OAuth2 scheme for authentication (placeholder)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# Include routers
+app.include_router(umk_admin.router)
 
 # Initialize services
 offer_parser = OfferLetterParser()

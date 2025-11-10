@@ -90,6 +90,29 @@ class User(Base):
     analyses_limit = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
+class UMKData(Base):
+    __tablename__ = "umk_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    kabupaten_kota = Column(String(100), nullable=False, index=True)
+    provinsi = Column(String(50), nullable=False, index=True)
+    umk = Column(Integer, nullable=False)  # Monthly UMK in IDR
+    tahun = Column(Integer, nullable=False, index=True)
+    region = Column(String(30), index=True)
+    is_active = Column(Boolean, default=True, index=True)
+    source = Column(String(100))  # Source of data (e.g., "Kemenaker RI")
+    notes = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(String(100))  # Admin who created/updated
+
+    # Unique constraint for combination
+    __table_args__ = (
+        CheckConstraint('umk > 0', name='check_umk_positive'),
+        CheckConstraint('tahun >= 2020', name='check_tahun_minimum'),
+        {'extend_existing': True}
+    )
+
 def init_database():
     """
     Initialize database tables and sample data
@@ -243,8 +266,55 @@ def add_sample_data():
 
         logger.info(f"✅ Added {len(sample_data)} sample salary records")
 
+        # Add UMK data if empty
+        add_umk_data()
+
     except Exception as e:
         logger.error(f"Error adding sample data: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+def add_umk_data():
+    """
+    Add UMK data if table is empty
+    """
+    try:
+        from services.umk_data import UMK_DATA_2024
+
+        db = SessionLocal()
+
+        # Check if umk_data table has data
+        count = db.query(UMKData).count()
+        if count > 0:
+            logger.info("UMK data already exists")
+            db.close()
+            return
+
+        # Convert existing UMK data to database format
+        umk_records = []
+        for location_key, data in UMK_DATA_2024.items():
+            umk_record = UMKData(
+                kabupaten_kota=data['kabupaten_kota'],
+                provinsi=data['provinsi'],
+                umk=data['umk'],
+                tahun=2024,
+                region=data['region'],
+                is_active=True,
+                source="Kementerian Ketenagakerjaan RI",
+                notes="Imported from initial UMK data",
+                created_by="system"
+            )
+            umk_records.append(umk_record)
+
+        # Add UMK data
+        db.add_all(umk_records)
+        db.commit()
+
+        logger.info(f"✅ Added {len(umk_records)} UMK records")
+
+    except Exception as e:
+        logger.error(f"Error adding UMK data: {e}")
         db.rollback()
     finally:
         db.close()

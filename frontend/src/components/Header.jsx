@@ -1,7 +1,7 @@
 import React from 'react';
-import { TrendingUp, DollarSign } from 'lucide-react';
+import { TrendingUp, DollarSign, Settings, Home } from 'lucide-react';
 
-const Header = () => {
+const Header = ({ onNavigate, currentView }) => {
   return (
     <header className="bg-white border-b border-gray-200">
       <div className="container mx-auto px-4 py-4 max-w-6xl">
@@ -19,6 +19,32 @@ const Header = () => {
 
           <div className="flex items-center space-x-6">
             <nav className="hidden md:flex space-x-6">
+              <button
+                onClick={() => onNavigate && onNavigate('home')}
+                className={`flex items-center space-x-1 transition-colors ${
+                  currentView === 'home'
+                    ? 'text-blue-600 font-medium'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Home className="w-4 h-4" />
+                <span>Home</span>
+              </button>
+
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate('umk-admin')}
+                  className={`flex items-center space-x-1 transition-colors ${
+                    currentView === 'umk-admin'
+                      ? 'text-blue-600 font-medium'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>UMK Admin</span>
+                </button>
+              )}
+
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">
                 Features
               </a>

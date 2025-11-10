@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
-import { Upload, FileText, TrendingUp, DollarSign, Target } from 'lucide-react';
+import { Upload, FileText, TrendingUp, DollarSign, Target, Settings } from 'lucide-react';
 import FileUpload from './components/FileUpload';
 import AnalysisResults from './components/AnalysisResults';
+import UMKDashboard from './components/UMKDashboard';
 import Header from './components/Header';
 
 function App() {
+  const [currentView, setCurrentView] = useState('home'); // 'home', 'analysis', 'umk-admin'
   const [analysisData, setAnalysisData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleAnalysisComplete = (data) => {
     setAnalysisData(data);
+    setCurrentView('analysis');
     setIsLoading(false);
     setError(null);
   };
 
   const handleAnalysisStart = () => {
+    setCurrentView('analysis');
     setIsLoading(true);
     setError(null);
     setAnalysisData(null);
@@ -28,18 +32,33 @@ function App() {
   };
 
   const handleNewAnalysis = () => {
+    setCurrentView('home');
     setAnalysisData(null);
     setError(null);
     setIsLoading(false);
   };
 
+  const handleNavigation = (view) => {
+    setCurrentView(view);
+    if (view === 'home') {
+      setAnalysisData(null);
+      setError(null);
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <Header />
+      <Header onNavigate={handleNavigation} currentView={currentView} />
 
       <main className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* UMK Admin Dashboard */}
+        {currentView === 'umk-admin' && (
+          <UMKDashboard />
+        )}
+
         {/* Hero Section */}
-        {!analysisData && !isLoading && (
+        {currentView === 'home' && !analysisData && !isLoading && (
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               Tech Salary Negotiator
@@ -87,7 +106,7 @@ function App() {
         )}
 
         {/* Loading State */}
-        {isLoading && (
+        {currentView === 'analysis' && isLoading && (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="loading-spinner w-16 h-16 mb-4"></div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
@@ -101,7 +120,7 @@ function App() {
         )}
 
         {/* Error State */}
-        {error && (
+        {currentView === 'analysis' && error && (
           <div className="max-w-2xl mx-auto">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-red-900 mb-2">
@@ -119,7 +138,7 @@ function App() {
         )}
 
         {/* File Upload Component */}
-        {!analysisData && !isLoading && !error && (
+        {currentView === 'home' && !analysisData && !isLoading && !error && (
           <FileUpload
             onAnalysisComplete={handleAnalysisComplete}
             onAnalysisStart={handleAnalysisStart}
@@ -128,7 +147,7 @@ function App() {
         )}
 
         {/* Results Component */}
-        {analysisData && !isLoading && (
+        {currentView === 'analysis' && analysisData && !isLoading && (
           <AnalysisResults
             data={analysisData}
             onNewAnalysis={handleNewAnalysis}
