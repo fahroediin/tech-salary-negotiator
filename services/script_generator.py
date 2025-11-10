@@ -377,32 +377,34 @@ Best regards,
         """
         Generate fallback scripts when AI generation fails
         """
-        offer = analysis_result['offer_data']
-        target_salary = analysis_result['negotiation_room']['realistic']
+        offer = analysis_result.get('offer_data', {})
+        negotiation_room = analysis_result.get('negotiation_room', {})
+        target_salary = negotiation_room.get('realistic', 0)
 
-        job_title = offer.get('job_title', 'Senior Software Engineer')
-        company = offer.get('company', 'the company')
-        location = offer.get('location', 'this location')
-        years_experience = user_profile.get('years_experience', '5')
-        tech_stack = user_profile.get('tech_stack', ['relevant technologies'])
-        target_base = int(target_salary * 0.8)  # Estimate base salary portion
+        job_title = offer.get('job_title', 'Senior Software Engineer') or 'Senior Software Engineer'
+        company = offer.get('company', 'the company') or 'the company'
+        location = offer.get('location', 'this location') or 'this location'
+        years_experience = user_profile.get('years_experience', '5') or '5'
+        tech_stack = user_profile.get('tech_stack', ['relevant technologies']) or ['relevant technologies']
+        target_base = int(target_salary * 0.8) if target_salary > 0 else 100000  # Estimate base salary portion
 
-        return {
-            'assertive': self._generate_basic_template('assertive').format(
-                job_title=job_title, company=company, location=location,
-                years_experience=years_experience, tech_stack=', '.join(tech_stack[:3]),
-                target_base=target_base
-            ),
-            'balanced': self._generate_basic_template('balanced').format(
-                job_title=job_title, company=company, location=location,
-                years_experience=years_experience, tech_stack=', '.join(tech_stack[:3]),
-                target_base=target_base
-            ),
-            'humble': self._generate_basic_template('humble').format(
-                job_title=job_title, company=company, location=location,
-                years_experience=years_experience, tech_stack=', '.join(tech_stack[:3]),
-                target_base=target_base
-            ),
+        try:
+            return {
+                'assertive': self._generate_basic_template('assertive').format(
+                    job_title=job_title, company=company, location=location,
+                    years_experience=years_experience, tech_stack=', '.join(tech_stack[:3]),
+                    target_base=target_base
+                ),
+                'balanced': self._generate_basic_template('balanced').format(
+                    job_title=job_title, company=company, location=location,
+                    years_experience=years_experience, tech_stack=', '.join(tech_stack[:3]),
+                    target_base=target_base
+                ),
+                'humble': self._generate_basic_template('humble').format(
+                    job_title=job_title, company=company, location=location,
+                    years_experience=years_experience, tech_stack=', '.join(tech_stack[:3]),
+                    target_base=target_base
+                ),
             'tips': [
                 {'title': 'Be Prepared', 'description': 'Research market rates before negotiating.'},
                 {'title': 'Stay Professional', 'description': 'Maintain positive relationships throughout the process.'},
@@ -414,3 +416,20 @@ Best regards,
                 "I'm excited about this opportunity and want to make it work"
             ]
         }
+        except Exception as e:
+            logger.error(f"Error formatting fallback scripts: {str(e)}")
+            # Return basic scripts without formatting
+            return {
+                'assertive': 'Subject: Following up on the offer\n\nDear Hiring Manager,\n\nThank you for extending the offer. I would like to discuss the compensation package based on market research.\n\nBest regards,\n[Your Name]',
+                'balanced': 'Subject: Quick question about the offer\n\nDear Hiring Manager,\n\nThank you for the offer. I was hoping we could discuss the compensation to better align with market rates.\n\nBest regards,\n[Your Name]',
+                'humble': 'Subject: Thank you for the offer!\n\nDear Hiring Manager,\n\nI appreciate the offer. I was wondering if there might be any flexibility on the base salary?\n\nThank you,\n[Your Name]',
+                'tips': [
+                    {'title': 'Be Prepared', 'description': 'Research market rates before negotiating.'},
+                    {'title': 'Stay Professional', 'description': 'Maintain positive relationships throughout the process.'}
+                ],
+                'talking_points': [
+                    "Market research supports salary adjustment",
+                    "Experience and skills deserve fair compensation",
+                    "Excited about the opportunity"
+                ]
+            }

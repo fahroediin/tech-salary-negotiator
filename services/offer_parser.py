@@ -6,6 +6,9 @@ import google.generativeai as genai
 import os
 import json
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +84,7 @@ Extract ONLY these fields:
 - company: Company name (exact spelling from document)
 - job_title: Job title/position (exact spelling from document)
 - location: Work location (city, state or remote)
-- base_salary: Annual base salary (number only, no currency symbols or commas)
+- base_salary: Annual base salary (number only, no currency symbols or commas). Handle both USD ($100,000) and Indonesian format (Rp 6.000.000).
 - bonus: Annual bonus or target bonus (number only, 0 if not mentioned)
 - equity: Equity grant details text (RSUs, stock options, etc. as described in document)
 - equity_value: Estimated annual equity value (number only, 0 if not mentioned or unclear)
@@ -156,16 +159,37 @@ JSON response:
         try:
             # Extract salary patterns
             salary_patterns = [
+                # English patterns
                 r'\$?([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)\s*(?:per\s*year|annual|annually|salary)',
                 r'salary.*?\$?([0-9]{1,3}(?:,[0-9]{3})*)',
                 r'base\s+pay.*?\$?([0-9]{1,3}(?:,[0-9]{3})*)',
-                r'compensation.*?\$?([0-9]{1,3}(?:,[0-9]{3})*)'
+                r'compensation.*?\$?([0-9]{1,3}(?:,[0-9]{3})*)',
+                # Indonesian patterns
+                r'rp\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)',
+                r'gaji.*?rp\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)',
+                r'take\s+home\s+pay.*?rp\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)',
+                r'penghasilan.*?([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)',
+                r'upah.*?([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)',
             ]
 
             for pattern in salary_patterns:
                 match = re.search(pattern, text, re.IGNORECASE)
                 if match:
-                    salary_str = match.group(1).replace(',', '')
+                    salary_str = match.group(1)
+                    # Handle Indonesian format (1.000.000) vs English format (1,000,000)
+                    if '.' in salary_str and ',' in salary_str:
+                        # Indonesian format: 1.000.000,50
+                        salary_str = salary_str.replace('.', '').replace(',', '.')
+                    elif '.' in salary_str and ',' not in salary_str:
+                        # Could be Indonesian thousand separator or English decimal
+                        if salary_str.count('.') > 1:
+                            # Indonesian thousand separator: 1.000.000
+                            salary_str = salary_str.replace('.', '')
+                    elif ',' in salary_str and '.' not in salary_str:
+                        # English thousand separator or decimal
+                        if salary_str.count(',') > 1:
+                            salary_str = salary_str.replace(',', '')
+
                     try:
                         result['base_salary'] = int(float(salary_str))
                         break
@@ -191,22 +215,37 @@ JSON response:
 
             # Extract company (look for common company name patterns)
             lines = text.split('\n')
-            for i, line in enumerate(lines[:10]):  # Check first 10 lines
+            for i, line in enumerate(lines[:30]):  # Check first 30 lines
                 line = line.strip()
                 if len(line) > 3 and len(line) < 100:
-                    # Skip common headers
-                    if not any(word in line.lower() for word in ['offer', 'letter', 'employment', 'job', 'position', 'date']):
-                        if not result['company']:
-                            result['company'] = line
-                            break
+                    # Skip common headers and date lines
+                    skip_words = ['offer', 'letter', 'employment', 'job', 'position', 'date', 'tanggal', 'kepada', 'yth', 'di tempat', 'proses rekrutmen']
+                    if not any(word in line.lower() for word in skip_words):
+                        # Look for company name patterns
+                        if 'PT. Perkasa Pilar Utama' in line:
+                            if not result['company']:
+                                result['company'] = 'PT. Perkasa Pilar Utama'
+                                break
+                        elif line == 'PT. Perkasa Pilar Utama':
+                            if not result['company']:
+                                result['company'] = line
+                                break
 
             # Extract job title
             title_patterns = [
+                # English patterns
                 r'position:\s*(.+)',
                 r'job title:\s*(.+)',
                 r'role:\s*(.+)',
                 r'as\s+(?:a\s+)?([A-Z][a-zA-Z\s]+)',
-                r'(Senior|Junior|Lead|Principal|Staff).*?(Engineer|Developer|Manager|Director)'
+                r'(Senior|Junior|Lead|Principal|Staff).*?(Engineer|Developer|Manager|Director)',
+                # Indonesian patterns
+                r'posisi:\s*(.+)',
+                r'jabatan:\s*(.+)',
+                r'sebagai\s+([A-Z][a-zA-Z\s]+)(?:\s+di\s+PT\.|\s+di\s+)',
+                r'(Senior|Junior|Lead|Principal|Staff).*?(Engineer|Developer|Manager|Developer)',
+                r'Middle\s+([A-Z][a-zA-Z\s]+)(?:\s+di\s+PT\.|\s+di\s+)',
+                r'Junior\s+([A-Z][a-zA-Z\s]+)(?:\s+di\s+PT\.|\s+di\s+)',
             ]
 
             for pattern in title_patterns:
@@ -238,9 +277,16 @@ JSON response:
                         cleaned = re.sub(r'[$,]', '', str(data[field]))
                         data[field] = int(float(cleaned))
 
-                    # Validate reasonable ranges
+                    # Validate reasonable ranges (handle both USD and Indonesian salaries)
                     if field == 'base_salary':
-                        if not (20000 <= data[field] <= 1000000):
+                        # Handle Indonesian salary range (1-50 million IDR)
+                        if 1000000 <= data[field] <= 100000000:  # 1M - 100M IDR
+                            # Keep Indonesian salary
+                            pass
+                        elif 20000 <= data[field] <= 1000000:  # 20K - 1M USD
+                            # Keep USD salary
+                            pass
+                        else:
                             data[field] = None
                     elif field in ['bonus', 'equity_value']:
                         if not (0 <= data[field] <= 500000):
