@@ -22,6 +22,8 @@ const AnalysisResults = ({ data, onNewAnalysis }) => {
         return 'text-orange-600 bg-orange-50';
       case 'SIGNIFICANTLY_UNDERPAID':
         return 'text-danger-600 bg-danger-50';
+      case 'BELOW_UMK':
+        return 'text-red-700 bg-red-50';
       default:
         return 'text-gray-600 bg-gray-50';
     }
@@ -35,7 +37,9 @@ const AnalysisResults = ({ data, onNewAnalysis }) => {
       case 'FAIR':
         return <AlertTriangle className="w-5 h-5" />;
       case 'UNDERPAID':
+        return <AlertTriangle className="w-5 h-5" />;
       case 'SIGNIFICANTLY_UNDERPAID':
+      case 'BELOW_UMK':
         return <XCircle className="w-5 h-5" />;
       default:
         return <AlertTriangle className="w-5 h-5" />;
@@ -43,9 +47,9 @@ const AnalysisResults = ({ data, onNewAnalysis }) => {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('id-ID', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'IDR',
       minimumFractionDigits: 0,
     }).format(amount || 0);
   };
@@ -107,6 +111,25 @@ const AnalysisResults = ({ data, onNewAnalysis }) => {
               <span>Total Compensation</span>
               <span className="text-blue-600">{formatCurrency(analysis.total_compensation)}</span>
             </div>
+
+            {/* UMK Compliance */}
+            {analysis.umk_compliance && (
+              <div className="border-t pt-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">vs. UMK ({analysis.umk_compliance.kabupaten_kota || analysis.umk_compliance.provinsi})</span>
+                  <span className={`text-sm font-medium ${
+                    analysis.umk_compliance.complies ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {analysis.umk_compliance.difference_formatted}
+                  </span>
+                </div>
+                <div className={`text-xs mt-1 p-2 rounded ${
+                  analysis.umk_compliance.complies ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                }`}>
+                  {analysis.umk_compliance.message}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

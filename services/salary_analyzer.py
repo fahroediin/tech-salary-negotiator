@@ -3,6 +3,7 @@ from typing import Dict, List
 import os
 import logging
 from .market_data import MarketDataService
+from .umk_data import get_umk_for_location, calculate_umk_compliance
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +35,22 @@ class SalaryAnalyzer:
             # Calculate total compensation
             total_comp = self._calculate_total_comp(offer_data)
 
-            # Determine verdict
-            verdict = self._determine_verdict(total_comp, market_data)
+            # Check UMK compliance
+            umk_data = get_umk_for_location(offer_data.get('location', ''))
+            umk_compliance = calculate_umk_compliance(
+                offer_data.get('base_salary', 0),
+                umk_data
+            )
+
+            # Determine verdict (consider UMK compliance)
+            verdict = self._determine_verdict_umk(total_comp, market_data, umk_compliance)
 
             # Generate AI analysis using Gemini
             ai_analysis = await self._generate_ai_analysis(
                 offer_data,
                 market_data,
-                verdict
+                verdict,
+                umk_compliance
             )
 
             analysis_result = {
@@ -62,10 +71,12 @@ class SalaryAnalyzer:
                     offer_data,
                     market_data,
                     verdict
-                )
+                ),
+                'umk_data': umk_data,
+                'umk_compliance': umk_compliance
             }
 
-            logger.info(f"Analysis complete. Verdict: {verdict}, Total comp: ${total_comp:,}")
+            logger.info(f"Analysis complete. Verdict: {verdict}, Total comp: Rp {total_comp:,}".replace(',', '.'))
             return analysis_result
 
         except Exception as e:
@@ -115,11 +126,23 @@ class SalaryAnalyzer:
         else:
             return "EXCELLENT"
 
+    def _determine_verdict_umk(self, total_comp: int, market_data: Dict, umk_compliance: Dict) -> str:
+        """
+        Determine verdict considering UMK compliance
+        """
+        # If offer is below UMK, immediately mark as problematic
+        if umk_compliance and not umk_compliance['complies']:
+            return "BELOW_UMK"
+
+        # Otherwise use original market-based verdict
+        return self._determine_verdict(total_comp, market_data)
+
     async def _generate_ai_analysis(
         self,
         offer_data: Dict,
         market_data: Dict,
-        verdict: str
+        verdict: str,
+        umk_compliance: Dict
     ) -> str:
         """
         Generate detailed AI analysis using Gemini
@@ -147,6 +170,11 @@ You are an expert tech compensation analyst and career coach. Analyze this job o
 - Market P90: ${market_data.get('p90', 0):,}
 - Sample Size: {market_data.get('sample_size', 0)} data points
 - Data Confidence: {market_data.get('confidence', 'unknown')}
+
+**UMK (Upah Minimum) Compliance:**
+- Location UMK: {umk_compliance.get('umk_amount_formatted', 'N/A')}
+- Offer vs UMK: {umk_compliance.get('message', 'Not available')}
+- UMK Status: {'✅ COMPLIES' if umk_compliance.get('complies') else '❌ BELOW MINIMUM'}
 
 **Assessment: {verdict}**
 
